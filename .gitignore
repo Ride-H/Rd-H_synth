@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode / CMake build artifacts
+build/
+build-release/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.o
+*.a
+*.dylib
+*.so
+*.dSYM/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# JuceLibraryCode は生成物のため除外（必要なら include に変更）
+JuceLibraryCode/
+
+# 一時ファイル
+*.tmp
+*.bak
+*.swp
+*~
+
+# 内部資料は公開しない
+説明/
