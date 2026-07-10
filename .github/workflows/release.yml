@@ -1,0 +1,44 @@
+name: Release
+
+# タグ push（v*）で VST3 / AU / Standalone を Release ビルドし、
+# zip を GitHub Release に添付する（デプロイ）。
+# 注意: 生成物は未署名（unsigned）。macOS Gatekeeper では初回起動時に
+# 「右クリック → 開く」または quarantine 解除が必要。
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & attach artifacts
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Release)
+        run: cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build all plugin formats
+        run: cmake --build build-rel --target RdhSynth_All --parallel 3
+
+      - name: Package artifacts
+        run: |
+          cd build-rel/RdhSynth_artefacts/Release
+          ditto -c -k --keepParent "VST3/Rd-H Synth.vst3"           "RdH-Synth-${GITHUB_REF_NAME}-macOS-VST3.zip"
+          ditto -c -k --keepParent "AU/Rd-H Synth.component"        "RdH-Synth-${GITHUB_REF_NAME}-macOS-AU.zip"
+          ditto -c -k --keepParent "Standalone/Rd-H Synth.app"      "RdH-Synth-${GITHUB_REF_NAME}-macOS-Standalone.zip"
+          ls -la *.zip
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            build-rel/RdhSynth_artefacts/Release/*.zip \
+            --title "Rd-H Synth $GITHUB_REF_NAME" \
+            --generate-notes \
+            --notes "未署名ビルドです。macOS では初回起動時に Gatekeeper の確認が出ます（右クリック→開く、または \`xattr -d com.apple.quarantine <ファイル>\`）。"

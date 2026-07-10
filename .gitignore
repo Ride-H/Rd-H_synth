@@ -6,6 +6,10 @@
 # Xcode / CMake build artifacts
 build/
 build-release/
+build-ci/
+build-rel/
+_site/
+smoke.wav
 *.xcodeproj/
 *.xcworkspace/
 DerivedData/

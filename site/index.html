@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rd-H Synth — Interactive UI Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Deeper green-tinted dark - matches existing UI */
+  --bg:        #0A1410;
+  --surface:   #0F1A15;
+  --surface2:  #14211B;
+  --border:    #1F2E26;
+  --borderLt:  #2A3D33;
+  /* Primary: brighter neon green like the existing knobs */
+  --primary:   #7CFC8A;
+  --primaryGlow: rgba(124, 252, 138, 0.45);
+  --primaryDim: rgba(124, 252, 138, 0.12);
+  --primaryDark: #34D058;
+  /* Accents (used sparingly) */
+  --accent:    #F59E0B;
+  --accentGlow: rgba(245, 158, 11, 0.45);
+  --purple:    #B377FF;
+  --purpleGlow: rgba(179, 119, 255, 0.4);
+  --ai:        #5DD3FB;
+  --aiGlow:    rgba(93, 211, 251, 0.4);
+  /* Text - greenish gray like existing */
+  --textPrimary: #C8DAD0;
+  --textSecondary: #7A8C82;
+  --textDim:   #4F5F57;
+  --danger:    #EF4444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: #050908;
+  color: var(--textPrimary);
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(124, 252, 138, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(124, 252, 138, 0.02) 0%, transparent 50%);
+}
+
+/* ===== Header ===== */
+.header {
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.header h1 {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  color: var(--textSecondary);
+  text-transform: uppercase;
+}
+.header .accent { color: var(--primary); }
+
+/* ===== Plugin Window ===== */
+.plugin {
+  width: 100%;
+  max-width: 1100px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(124, 252, 138, 0.04) inset;
+  overflow: hidden;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #0D1814 0%, #081310 100%);
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand .mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #0F1A15, #0A1410);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  position: relative;
+  box-shadow:
+    0 0 12px var(--primaryGlow),
+    inset 0 0 8px rgba(124, 252, 138, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brand .mark span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: 0 0 6px var(--primaryGlow);
+  letter-spacing: -0.5px;
+}
+.brand .name {
+  font-weight: 700;
+  letter-spacing: 3px;
+  font-size: 13px;
+  color: var(--textPrimary);
+}
+.brand .name span {
+  color: var(--primary);
+  text-shadow: 0 0 4px var(--primaryGlow);
+}
+.brand .ver {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--textDim);
+  letter-spacing: 1px;
+  margin-left: 2px;
+}
+
+.modes {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+.modes button {
+  background: transparent;
+  border: 0;
+  color: var(--textSecondary);
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.modes button:hover { color: var(--textPrimary); }
+.modes button.active {
+  background: var(--surface2);
+  color: var(--primary);
+  box-shadow: 0 0 0 1px var(--borderLt);
+  text-shadow: 0 0 4px var(--primaryGlow);
+}
+.modes button.active[data-mode="ai"] {
+  color: var(--ai);
+  text-shadow: 0 0 4px var(--aiGlow);
+}
+.modes button.active[data-mode="performance"] {
+  color: var(--purple);
+  text-shadow: 0 0 4px var(--purpleGlow);
+}
+
+.preset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--textPrimary);
+  cursor: pointer;
+  min-width: 220px;
+  justify-content: space-between;
+  position: relative;
+}
+.preset .label { color: var(--textDim); font-size: 9px; letter-spacing: 1px; }
+.preset .name {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preset .name .ai-badge {
+  display: none;
+  background: rgba(93, 211, 251, 0.15);
+  color: var(--ai);
+  border: 1px solid rgba(93, 211, 251, 0.3);
+  font-size: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.preset.ai-active .name .ai-badge { display: inline; }
+.preset .name .edit-mark {
+  display: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+.preset.edited .name .edit-mark { display: inline; }
+.preset .arrow { color: var(--textDim); }
+
+/* ===== Mode Panels ===== */
+.panel { display: none; padding: 22px; min-height: 380px; }
+.panel.active { display: block; }
+
+/* ===== AI Mode ===== */
+.ai-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+  text-align: center;
+  gap: 18px;
+}
+.ai-drop {
+  width: 100%;
+  max-width: 520px;
+  min-height: 220px;
+  background: linear-gradient(180deg, var(--surface2) 0%, var(--bg) 100%);
+  border: 2px dashed var(--ai);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.ai-drop:hover {
+  border-color: var(--ai);
+  background: linear-gradient(180deg, var(--surface2) 0%, rgba(93, 211, 251, 0.05) 100%);
+  box-shadow: 0 0 40px rgba(93, 211, 251, 0.15);
+}
+.ai-drop.dragover {
+  border-color: var(--primary);
+  background: rgba(124, 252, 138, 0.06);
+  box-shadow: 0 0 50px var(--primaryGlow);
+}
+.ai-drop.processing {
+  border-style: solid;
+  background: rgba(93, 211, 251, 0.05);
+}
+.ai-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: rgba(93, 211, 251, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ai);
+  position: relative;
+}
+.ai-icon svg { width: 24px; height: 24px; }
+.ai-drop.processing .ai-icon {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--aiGlow); }
+  50% { box-shadow: 0 0 0 16px rgba(93, 211, 251, 0); }
+}
+.ai-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  color: var(--textPrimary);
+}
+.ai-subtitle {
+  font-size: 11px;
+  color: var(--textSecondary);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.ai-formats {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--textDim);
+}
+.ai-formats span {
+  padding: 3px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+.ai-progress {
+  width: 100%;
+  max-width: 320px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-progress.show { display: flex; }
+.ai-progress-bar {
+  height: 4px;
+  background: var(--surface);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.ai-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--ai), var(--primary));
+  transition: width 0.3s;
+  box-shadow: 0 0 8px var(--aiGlow);
+}
+.ai-progress-status {
+  font-size: 11px;
+  color: var(--ai);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.ai-result {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface2);
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: none;
+  text-align: left;
+  box-shadow: 0 0 24px rgba(124, 252, 138, 0.1);
+}
+.ai-result.show { display: block; }
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ai-result-header .lhs {
+  font-size: 11px;
+  color: var(--primary);
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  text-shadow: 0 0 4px var(--primaryGlow);
+}
+.ai-result-header .status {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--textDim);
+  letter-spacing: 1px;
+}
+.ai-result-summary {
+  font-size: 12px;
+  color: var(--textPrimary);
+  margin-bottom: 12px;
+  font-weight: 500;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.ai-result-params {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 16px;
+  font-size: 10px;
+}
+.ai-param {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.ai-param .k { color: var(--textSecondary); letter-spacing: 0.5px; }
+.ai-param .v { color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+
+.ai-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+.ai-actions button {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--textSecondary);
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ai-actions button:hover { color: var(--textPrimary); border-color: var(--primary); }
+.ai-actions button.primary {
+  background: var(--primary);
+  color: var(--bg);
+  border-color: var(--primary);
+}
+.ai-actions button.primary:hover { background: var(--primaryDark); }
+.ai-actions button.applied {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* AI status bar inside AI panel - shown when AI applied */
+.ai-current {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(93, 211, 251, 0.05);
+  border: 1px solid rgba(93, 211, 251, 0.3);
+  border-left: 3px solid var(--ai);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.ai-current.show { display: flex; }
+.ai-current .lhs {
+  color: var(--ai);
+  font-weight: 600;
+}
+.ai-current .lhs strong { color: var(--textPrimary); margin-left: 6px; }
+.ai-current button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--textSecondary);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ai-current button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ===== Simple Mode ===== */
+.simple {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: center;
+  text-align: center;
+}
+.preset-browser {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.preset-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 14px var(--primaryGlow);
+  transform: translateY(-2px);
+}
+.preset-card.active {
+  border-color: var(--primary);
+  background: linear-gradient(180deg, var(--surface2) 0%, var(--primaryDim) 100%);
+}
+.preset-card .cat {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--primary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-shadow: 0 0 3px var(--primaryGlow);
+}
+.preset-card .nm {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.simple-knobs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 20px 60px;
+}
+
+/* ===== Knob ===== */
+.knob-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.knob {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #1A2922, #0A1410);
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: ns-resize;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(124, 252, 138, 0.06);
+  transition: box-shadow 0.2s;
+}
+.knob:hover {
+  box-shadow:
+    0 4px 18px var(--primaryGlow),
+    inset 0 1px 0 rgba(124, 252, 138, 0.1);
+}
+.knob.small { width: 42px; height: 42px; }
+.knob.large { width: 72px; height: 72px; }
+.knob .indicator {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 2px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 1px;
+  transform-origin: 50% 23px;
+  box-shadow: 0 0 8px var(--primaryGlow);
+}
+.knob.small .indicator { height: 12px; transform-origin: 50% 16px; top: 4px; }
+.knob.large .indicator { height: 20px; transform-origin: 50% 31px; }
+.knob.accent .indicator { background: var(--accent); box-shadow: 0 0 8px var(--accentGlow); }
+.knob.purple .indicator { background: var(--purple); box-shadow: 0 0 8px var(--purpleGlow); }
+
+.knob-wrap .label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--textSecondary);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.knob-wrap .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--textPrimary);
+  font-weight: 500;
+}
+
+/* ===== Advanced Mode ===== */
+.section-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: stretch;
+}
+.section-tabs button {
+  background: transparent;
+  border: 0;
+  color: var(--textSecondary);
+  padding: 9px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+  bottom: -1px;
+}
+.section-tabs button:hover { color: var(--textPrimary); }
+.section-tabs button.active.osc   { color: var(--primary); border-bottom-color: var(--primary); text-shadow: 0 0 4px var(--primaryGlow); }
+.section-tabs button.active.fm    { color: var(--accent); border-bottom-color: var(--accent); }
+.section-tabs button.active.noise { color: #5DD3FB; border-bottom-color: #5DD3FB; }
+.section-tabs button.active.flt   { color: var(--purple); border-bottom-color: var(--purple); }
+.section-tabs button.active.amp   { color: var(--textPrimary); border-bottom-color: var(--textPrimary); }
+.section-tabs button.active.fx    { color: #EC4899; border-bottom-color: #EC4899; }
+.section-tabs button.active.mod   { color: #FBBF24; border-bottom-color: #FBBF24; }
+
+.section-tabs .sep {
+  width: 1px;
+  background: var(--borderLt);
+  margin: 6px 4px;
+}
+.section-tabs .fm-tag {
+  font-size: 8px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.section-content { display: none; }
+.section-content.active { display: block; }
+
+.fm-banner {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent);
+  border-left: 3px solid var(--accent);
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.fm-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.algo-vis, .fm-controls {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.algo-vis .title, .fm-controls .title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.algo-svg { width: 100%; height: 170px; }
+.op-circle { fill: #1A2922; stroke: var(--border); stroke-width: 1; transition: all 0.3s; }
+.op-circle.modulator { fill: #EA580C; stroke: var(--accent); }
+.op-circle.carrier { fill: #FCD34D; stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accentGlow)); }
+.op-text { fill: white; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; text-anchor: middle; }
+.op-conn { stroke: #7A8C82; stroke-width: 1.5; fill: none; }
+.op-fb { stroke: #EF4444; stroke-width: 1.5; fill: none; }
+
+.op-selector { display: flex; gap: 4px; margin-bottom: 14px; }
+.op-selector button {
+  flex: 1;
+  padding: 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--textSecondary);
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+.op-selector button.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.op-knobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+/* Performance Mode */
+.perf-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+.xy-pad {
+  background: var(--bg);
+  border: 1px solid var(--purple);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 0 20px rgba(179, 119, 255, 0.15);
+}
+.xy-pad .title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--purple);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.xy-area {
+  width: 100%;
+  height: 200px;
+  background:
+    linear-gradient(180deg, transparent 49.5%, rgba(255,255,255,0.04) 50%, transparent 50.5%),
+    linear-gradient(90deg, transparent 49.5%, rgba(255,255,255,0.04) 50%, transparent 50.5%),
+    radial-gradient(circle at center, rgba(179, 119, 255, 0.1), transparent 70%),
+    #060B09;
+  border-radius: 8px;
+  position: relative;
+  cursor: crosshair;
+}
+.xy-cursor {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: var(--purple);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 24px var(--purpleGlow), 0 0 48px var(--purpleGlow);
+}
+.macros { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.macros .title { font-size: 10px; letter-spacing: 2px; color: var(--purple); margin-bottom: 14px; font-weight: 700; }
+.macro-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+/* ===== Keyboard ===== */
+.keyboard-bar {
+  background: linear-gradient(180deg, #081310 0%, #050A08 100%);
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+}
+.kb-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 10px;
+  color: var(--textDim);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+}
+.kb-controls .arrow {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--textSecondary);
+  cursor: pointer;
+  font-size: 10px;
+}
+.kb-controls .arrow:hover { color: var(--primary); border-color: var(--primary); }
+.keyboard {
+  position: relative;
+  height: 84px;
+  display: flex;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: none;
+}
+.key-white {
+  flex: 1;
+  background: linear-gradient(180deg, #E8E8DD 0%, #D0D0C5 95%, #777 100%);
+  border-right: 1px solid #333;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.05s;
+}
+.key-white:hover { background: linear-gradient(180deg, #DDDDD0 0%, #B8B8AD 95%, #666 100%); }
+.key-white.pressed {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primaryDark) 100%);
+  box-shadow: 0 0 16px var(--primaryGlow);
+}
+.key-white .label {
+  position: absolute;
+  bottom: 4px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #888;
+  pointer-events: none;
+}
+.key-white.c .label { color: #444; font-weight: 700; }
+.key-black {
+  position: absolute;
+  width: 22px;
+  height: 52px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+  border-radius: 0 0 3px 3px;
+  border: 1px solid #000;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(255,255,255,0.1);
+  z-index: 2;
+}
+.key-black:hover { background: linear-gradient(180deg, #2a2a2a 0%, #111 100%); }
+.key-black.pressed {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primaryDark) 100%);
+  box-shadow: 0 0 16px var(--primaryGlow);
+}
+
+/* ===== Bottom bar ===== */
+.bottombar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 18px;
+  background: linear-gradient(180deg, #081310 0%, #0D1814 100%);
+  border-top: 1px solid var(--border);
+}
+.bottombar .left { display: flex; align-items: center; gap: 16px; flex: 1; }
+.cpu-meter { display: flex; align-items: center; gap: 8px; }
+.cpu-meter .label { font-size: 9px; letter-spacing: 1.5px; color: var(--textDim); font-weight: 700; }
+.cpu-bar { width: 70px; height: 5px; background: var(--bg); border-radius: 2px; overflow: hidden; border: 1px solid var(--border); }
+.cpu-fill { height: 100%; width: 22%; background: var(--primary); border-radius: 2px; transition: width 0.3s, background 0.3s; }
+.cpu-pct { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--textSecondary); min-width: 28px; }
+.voices-info { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--textSecondary); }
+.voices-info .num { color: var(--primary); }
+.master-vol { display: flex; align-items: center; gap: 10px; }
+.master-vol .label { font-size: 9px; letter-spacing: 1.5px; color: var(--textDim); font-weight: 700; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  font-size: 12px;
+  color: var(--textPrimary);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 100;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.ai { border-left-color: var(--ai); }
+.toast.warn { border-left-color: var(--accent); }
+
+.note {
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  background: rgba(124, 252, 138, 0.04);
+  border: 1px solid rgba(124, 252, 138, 0.2);
+  border-left: 3px solid var(--primary);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--textSecondary);
+  line-height: 1.7;
+}
+.note strong { color: var(--primary); }
+.note .label { color: var(--ai); font-weight: 700; }
+.note .step {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--primary);
+  margin: 0 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>▍ <span class="accent">Rd-H</span> &nbsp; SYNTH MOCKUP &nbsp;・&nbsp; インタラクティブ・デザインプレビュー</h1>
+</div>
+
+<div class="plugin">
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark"><span>R</span></div>
+      <div class="name">Rd<span>-H</span></div>
+      <div class="ver">SYNTH v4</div>
+    </div>
+
+    <div class="modes">
+      <button data-mode="ai" class="active">AI</button>
+      <button data-mode="simple">SIMPLE</button>
+      <button data-mode="advanced">ADVANCED</button>
+      <button data-mode="performance">PERFORMANCE</button>
+    </div>
+
+    <div class="preset" id="preset-display">
+      <div>
+        <div class="label">PRESET</div>
+        <div class="name">
+          <span class="ai-badge">AI</span>
+          <span id="preset-name">— No Preset —</span>
+          <span class="edit-mark">*</span>
+        </div>
+      </div>
+      <div class="arrow">▼</div>
+    </div>
+  </div>
+
+  <!-- ===== AI MODE ===== -->
+  <div class="panel active" id="panel-ai">
+    <div class="ai-mode">
+
+      <!-- AI Currently Applied banner -->
+      <div class="ai-current" id="ai-current">
+        <div class="lhs">⚡ AI APPLIED <strong id="ai-current-name">—</strong></div>
+        <button onclick="resetAI()">RESET AI ↺</button>
+      </div>
+
+      <div class="ai-drop" id="ai-drop">
+        <div class="ai-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5DD3FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="ai-title">DROP AUDIO FILE HERE</div>
+        <div class="ai-subtitle">参考音源をドロップすると、AI が解析して<br>各モードのパラメーターを自動設定します</div>
+        <div class="ai-formats">
+          <span>WAV</span><span>AIFF</span><span>FLAC</span>
+        </div>
+        <div class="ai-progress" id="ai-progress">
+          <div class="ai-progress-status" id="ai-status">解析中...</div>
+          <div class="ai-progress-bar"><div class="ai-progress-fill" id="ai-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="ai-result" id="ai-result">
+        <div class="ai-result-header">
+          <div class="lhs">✓ AI ANALYSIS COMPLETE</div>
+          <div class="status" id="ai-result-status">PREVIEW</div>
+        </div>
+        <div class="ai-result-summary" id="ai-summary">Lo-fi系のソフトベルサウンドとして検出されました</div>
+        <div class="ai-result-params" id="ai-params"></div>
+        <div class="ai-actions" id="ai-actions">
+          <button onclick="resetAIResult()">RETRY</button>
+          <button class="primary" id="ai-apply-btn" onclick="applyAI()">APPLY TO ALL MODES →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SIMPLE MODE ===== -->
+  <div class="panel" id="panel-simple">
+    <div class="simple">
+      <div class="preset-browser">
+        <div class="preset-card" data-preset="Bell Lead 01"><div class="cat">Bell</div><div class="nm">Bell Lead 01</div></div>
+        <div class="preset-card" data-preset="Lo-fi Keys"><div class="cat">EP</div><div class="nm">Lo-fi Keys</div></div>
+        <div class="preset-card" data-preset="Sub Bass Pure"><div class="cat">Bass</div><div class="nm">Sub Bass Pure</div></div>
+        <div class="preset-card" data-preset="Airy Pad"><div class="cat">Pad</div><div class="nm">Airy Pad</div></div>
+        <div class="preset-card" data-preset="FM Pluck"><div class="cat">Lead</div><div class="nm">FM Pluck</div></div>
+        <div class="preset-card" data-preset="Noise Hat"><div class="cat">Drum</div><div class="nm">Noise Hat</div></div>
+        <div class="preset-card" data-preset="Riser FX"><div class="cat">SFX</div><div class="nm">Riser FX</div></div>
+        <div class="preset-card" data-preset="Brass Stab"><div class="cat">Lead</div><div class="nm">Brass Stab</div></div>
+      </div>
+
+      <div class="simple-knobs">
+        <div class="knob-wrap">
+          <div class="knob large" data-val="35" data-key="cutoff"><div class="indicator"></div></div>
+          <div class="label">CUTOFF</div>
+          <div class="val" data-val-for="cutoff">3500 Hz</div>
+        </div>
+        <div class="knob-wrap">
+          <div class="knob large" data-val="35" data-key="reso"><div class="indicator"></div></div>
+          <div class="label">RESO</div>
+          <div class="val" data-val-for="reso">0.35</div>
+        </div>
+        <div class="knob-wrap">
+          <div class="knob large accent" data-val="15" data-key="attack"><div class="indicator"></div></div>
+          <div class="label">ATTACK</div>
+          <div class="val" data-val-for="attack">0.15 s</div>
+        </div>
+        <div class="knob-wrap">
+          <div class="knob large accent" data-val="60" data-key="release"><div class="indicator"></div></div>
+          <div class="label">RELEASE</div>
+          <div class="val" data-val-for="release">0.60 s</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADVANCED MODE ===== -->
+  <div class="panel" id="panel-advanced">
+    <div class="section-tabs">
+      <button data-section="osc" class="osc">OSC</button>
+      <div class="sep"></div>
+      <button data-section="fm" class="fm active">FM <span class="fm-tag">独立</span></button>
+      <div class="sep"></div>
+      <button data-section="noise" class="noise">NOISE</button>
+      <button data-section="flt" class="flt">FILTER</button>
+      <button data-section="amp" class="amp">AMP</button>
+      <button data-section="fx" class="fx">FX</button>
+      <button data-section="mod" class="mod">MOD</button>
+    </div>
+
+    <div class="section-content active" id="sec-fm">
+      <div class="fm-banner">▌ INDEPENDENT FM SECTION &nbsp;・&nbsp; DX7-style 4 Operator</div>
+      <div class="fm-layout">
+        <div class="algo-vis">
+          <div class="title">ALGORITHM &nbsp; — &nbsp; <span style="color: var(--textDim);">Algo 03</span></div>
+          <svg class="algo-svg" viewBox="0 0 320 170">
+            <line class="op-conn" x1="80"  y1="55"  x2="80"  y2="100"/>
+            <line class="op-conn" x1="200" y1="55"  x2="200" y2="100"/>
+            <line class="op-conn" x1="105" y1="125" x2="175" y2="125"/>
+            <path class="op-fb" d="M100,38 Q120,15 105,36" marker-end="url(#fb3)"/>
+            <defs><marker id="fb3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#EF4444"/></marker></defs>
+            <circle class="op-circle modulator" cx="80"  cy="48"  r="20"/><text class="op-text" x="80"  y="52">OP4</text>
+            <circle class="op-circle modulator" cx="200" cy="48"  r="20"/><text class="op-text" x="200" y="52">OP3</text>
+            <circle class="op-circle modulator" cx="80"  cy="125" r="20"/><text class="op-text" x="80"  y="129">OP2</text>
+            <circle class="op-circle carrier"   cx="200" cy="125" r="20"/><text class="op-text" x="200" y="129" style="fill: #7C2D12;">OP1</text>
+            <text x="160" y="165" text-anchor="middle" fill="#7A8C82" font-size="10" font-family="JetBrains Mono">→ INDEPENDENT OUTPUT</text>
+            <text x="50" y="22" fill="#EF4444" font-size="9" font-family="JetBrains Mono">FB</text>
+          </svg>
+        </div>
+        <div class="fm-controls">
+          <div class="title">OPERATOR EDIT</div>
+          <div class="op-selector">
+            <button>OP1</button><button class="active">OP2</button><button>OP3</button><button>OP4</button>
+          </div>
+          <div class="op-knobs">
+            <div class="knob-wrap"><div class="knob accent" data-val="50" data-key="fm-ratio"><div class="indicator"></div></div><div class="label">RATIO</div><div class="val" data-val-for="fm-ratio">2.000</div></div>
+            <div class="knob-wrap"><div class="knob accent" data-val="50" data-key="fm-level"><div class="indicator"></div></div><div class="label">LEVEL</div><div class="val" data-val-for="fm-level">0.50</div></div>
+            <div class="knob-wrap"><div class="knob accent" data-val="0"><div class="indicator"></div></div><div class="label">DETUNE</div><div class="val">0 ¢</div></div>
+            <div class="knob-wrap"><div class="knob small accent" data-val="20"><div class="indicator"></div></div><div class="label">ATK</div><div class="val">0.02s</div></div>
+            <div class="knob-wrap"><div class="knob small accent" data-val="55"><div class="indicator"></div></div><div class="label">DEC</div><div class="val">0.55s</div></div>
+            <div class="knob-wrap"><div class="knob small accent" data-val="40"><div class="indicator"></div></div><div class="label">REL</div><div class="val">0.40s</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-content" id="sec-osc"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px; color: var(--primary); text-shadow: 0 0 4px var(--primaryGlow);">▌ OSC SECTION (既存)</div><div style="font-size: 11px; margin-top: 10px;">OSC 1-3 / 減算合成系</div></div></div>
+    <div class="section-content" id="sec-noise"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px; color: #5DD3FB;">▌ NOISE SECTION</div><div style="font-size: 11px; margin-top: 10px;">White / Pink / Brown</div></div></div>
+    <div class="section-content" id="sec-flt"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px; color: var(--purple);">▌ FILTER SECTION</div></div></div>
+    <div class="section-content" id="sec-amp"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px;">▌ AMP / ENVELOPE</div></div></div>
+    <div class="section-content" id="sec-fx"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px; color: #EC4899;">▌ FX SECTION</div></div></div>
+    <div class="section-content" id="sec-mod"><div style="text-align: center; padding: 60px 20px; color: var(--textDim);"><div style="font-size: 14px; letter-spacing: 2px; color: #FBBF24;">▌ MODULATION MATRIX</div></div></div>
+  </div>
+
+  <!-- ===== PERFORMANCE MODE ===== -->
+  <div class="panel" id="panel-performance">
+    <div class="perf-layout">
+      <div class="xy-pad">
+        <div class="title">XY PAD &nbsp; — &nbsp; <span style="color: var(--textDim);">X: Cutoff / Y: Resonance</span></div>
+        <div class="xy-area" id="xy-area">
+          <div class="xy-cursor" id="xy-cursor" style="left: 70%; top: 30%;"></div>
+        </div>
+      </div>
+      <div class="macros">
+        <div class="title">8 MACROS</div>
+        <div class="macro-grid">
+          <div class="knob-wrap"><div class="knob purple" data-val="40"><div class="indicator"></div></div><div class="label">M1 BRIGHT</div></div>
+          <div class="knob-wrap"><div class="knob purple" data-val="55"><div class="indicator"></div></div><div class="label">M2 SPACE</div></div>
+          <div class="knob-wrap"><div class="knob purple" data-val="20"><div class="indicator"></div></div><div class="label">M3 DRIVE</div></div>
+          <div class="knob-wrap"><div class="knob purple" data-val="70"><div class="indicator"></div></div><div class="label">M4 MOD</div></div>
+          <div class="knob-wrap"><div class="knob small purple" data-val="50"><div class="indicator"></div></div><div class="label">M5</div></div>
+          <div class="knob-wrap"><div class="knob small purple" data-val="30"><div class="indicator"></div></div><div class="label">M6</div></div>
+          <div class="knob-wrap"><div class="knob small purple" data-val="80"><div class="indicator"></div></div><div class="label">M7</div></div>
+          <div class="knob-wrap"><div class="knob small purple" data-val="45"><div class="indicator"></div></div><div class="label">M8</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== KEYBOARD ===== -->
+  <div class="keyboard-bar">
+    <div class="kb-controls">
+      <div>
+        <span class="arrow">◀</span>
+        <span style="margin: 0 8px;">OCT C2 — C5</span>
+        <span class="arrow">▶</span>
+      </div>
+      <div>VEL: 100 &nbsp;·&nbsp; CH: 1</div>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <!-- ===== BOTTOM BAR ===== -->
+  <div class="bottombar">
+    <div class="left">
+      <div class="cpu-meter">
+        <div class="label">CPU</div>
+        <div class="cpu-bar"><div class="cpu-fill" id="cpu-fill"></div></div>
+        <div class="cpu-pct" id="cpu-pct">22%</div>
+      </div>
+      <div class="voices-info"><span class="num">3</span> / 16 voices</div>
+    </div>
+    <div class="master-vol">
+      <div class="label">MASTER</div>
+      <div class="knob-wrap" style="flex-direction: row; gap: 10px;">
+        <div class="knob small" data-val="70"><div class="indicator"></div></div>
+        <div class="val">-3.0 dB</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>このモックについて</strong>（デザインプレビュー — 実際のプラグイン実装とは異なる場合があります）<br>
+  &nbsp;・<span class="label">ブランド名</span>: 全箇所を <strong>Rd-H</strong> に変更(ロゴマーク内に「R」、ブランド名「Rd-H」、バージョン「SYNTH v4」)<br>
+  &nbsp;・<span class="label">配色</span>: 既存UIに更に寄せ — 背景 <strong>#0A1410</strong>(深い暗緑)、Primary <strong>#7CFC8A</strong>(蛍光ネオングリーン)、文字色も緑グレー寄り(#C8DAD0)<br>
+  &nbsp;・<span class="label">AI動線整理</span>: 状態管理を明確化(下記参照)<br><br>
+
+  <strong>AI動線の確認</strong> — 以下を順に試してみてください:<br>
+  &nbsp;<span class="step">1</span> AIモードでドロップエリアをクリック → 解析<br>
+  &nbsp;<span class="step">2</span> 「APPLY TO ALL MODES →」を押す → <strong>右上プリセット名にAIバッジ点灯 / AIモード上部に「AI APPLIED」バー出現</strong><br>
+  &nbsp;<span class="step">3a</span> SIMPLEに切替 → プリセットカードをクリック → <strong>確認ダイアログなしでAI状態が破棄され、プリセットが適用される(AIバッジ消える)</strong><br>
+  &nbsp;<span class="step">3b</span> AIモードに戻って「RESET AI ↺」ボタン → <strong>明示的にAI適用前の状態に戻る</strong><br>
+  &nbsp;<span class="step">3c</span> ノブを手で動かす → <strong>プリセット名に「*」マークが付く(編集中表示)、AIバッジは残る</strong>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+const state = {
+  aiApplied: false,
+  aiPresetName: null,
+  preAIState: null,  // snapshot of knob values before AI apply
+  edited: false,
+};
+
+function snapshotKnobs() {
+  const snap = {};
+  document.querySelectorAll('.knob[data-key]').forEach(k => {
+    snap[k.dataset.key] = {
+      val: k.dataset.val,
+      display: document.querySelector(`[data-val-for="${k.dataset.key}"]`)?.textContent || ''
+    };
+  });
+  return snap;
+}
+
+function restoreKnobs(snap) {
+  Object.entries(snap).forEach(([key, {val, display}]) => {
+    document.querySelectorAll(`.knob[data-key="${key}"]`).forEach(k => {
+      k.dataset.val = val;
+      updateKnob(k);
+    });
+    if (display) {
+      document.querySelectorAll(`[data-val-for="${key}"]`).forEach(el => el.textContent = display);
+    }
+  });
+}
+
+function updatePresetUI() {
+  const pd = document.getElementById('preset-display');
+  pd.classList.toggle('ai-active', state.aiApplied);
+  pd.classList.toggle('edited', state.edited);
+}
+
+// ===== Mode switching =====
+document.querySelectorAll('.modes button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.modes button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + btn.dataset.mode).classList.add('active');
+  });
+});
+
+// ===== Section tabs =====
+document.querySelectorAll('.section-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.section-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+    document.getElementById('sec-' + btn.dataset.section).classList.add('active');
+  });
+});
+
+// ===== Knob =====
+function updateKnob(k) {
+  const v = parseFloat(k.dataset.val) || 0;
+  const angle = (v / 100) * 270 - 135;
+  k.querySelector('.indicator').style.transform = `translateX(-50%) rotate(${angle}deg)`;
+}
+function setKnobValue(key, val, displayText) {
+  document.querySelectorAll(`.knob[data-key="${key}"]`).forEach(k => {
+    k.dataset.val = val;
+    updateKnob(k);
+  });
+  if (displayText) {
+    document.querySelectorAll(`[data-val-for="${key}"]`).forEach(el => el.textContent = displayText);
+  }
+}
+document.querySelectorAll('.knob').forEach(k => {
+  if (!k.dataset.val) k.dataset.val = '50';
+  updateKnob(k);
+  let dragging = false, startY = 0, startVal = 0;
+  k.addEventListener('mousedown', e => {
+    dragging = true; startY = e.clientY; startVal = parseFloat(k.dataset.val);
+    document.body.style.cursor = 'ns-resize';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dy = startY - e.clientY;
+    let nv = Math.max(0, Math.min(100, startVal + dy * 0.5));
+    k.dataset.val = nv;
+    updateKnob(k);
+    // mark as edited if AI applied
+    if (state.aiApplied && k.dataset.key) {
+      state.edited = true;
+      updatePresetUI();
+    }
+  });
+  document.addEventListener('mouseup', () => { dragging = false; document.body.style.cursor = ''; });
+});
+
+// ===== Preset cards =====
+document.querySelectorAll('.preset-card').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.preset-card').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    // If AI was applied, override it
+    if (state.aiApplied) {
+      state.aiApplied = false;
+      state.edited = false;
+      state.preAIState = null;
+      hideAIApplied();
+      showToast('プリセット選択により AI 状態を破棄しました', 'warn');
+    }
+    document.getElementById('preset-name').textContent = c.dataset.preset;
+    updatePresetUI();
+    showToast('Preset loaded: ' + c.dataset.preset);
+  });
+});
+
+// ===== OP selector =====
+document.querySelectorAll('.op-selector button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.op-selector button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+
+// ===== AI mode =====
+const aiDrop = document.getElementById('ai-drop');
+const aiProgress = document.getElementById('ai-progress');
+const aiFill = document.getElementById('ai-fill');
+const aiStatus = document.getElementById('ai-status');
+const aiResult = document.getElementById('ai-result');
+const aiCurrent = document.getElementById('ai-current');
+
+const AI_PRESETS = [
+  {
+    summary: 'Lo-fi系のソフトベルサウンドとして検出されました',
+    presetName: 'AI: Lo-fi Bell',
+    params: {
+      cutoff: { val: 28, display: '385 Hz' },
+      reso:   { val: 35, display: '0.35' },
+      attack: { val: 8,  display: '0.02 s' },
+      release:{ val: 78, display: '0.85 s' },
+      'fm-ratio': { val: 50, display: '2.000' },
+      'fm-level': { val: 50, display: '0.50' },
+    },
+    detail: [
+      ['Cutoff','385 Hz'],['Resonance','0.35'],
+      ['FM Algorithm','Algo 03'],['FM Ratio (OP2)','2.000'],
+      ['Noise Type','Pink'],['Noise Level','0.18'],
+      ['Attack','0.02 s'],['Release','0.85 s'],
+    ],
+  },
+  {
+    summary: 'パーカッシブな FM ベース音色として検出されました',
+    presetName: 'AI: FM Bass',
+    params: {
+      cutoff: { val: 18, display: '180 Hz' },
+      reso:   { val: 60, display: '0.60' },
+      attack: { val: 2,  display: '0.005 s' },
+      release:{ val: 25, display: '0.20 s' },
+      'fm-ratio': { val: 25, display: '1.000' },
+      'fm-level': { val: 75, display: '0.75' },
+    },
+    detail: [
+      ['Cutoff','180 Hz'],['Resonance','0.60'],
+      ['FM Algorithm','Algo 01'],['FM Ratio (OP2)','1.000'],
+      ['Noise Type','—'],['Noise Level','0.00'],
+      ['Attack','0.005 s'],['Release','0.20 s'],
+    ],
+  },
+];
+let aiPickIdx = 0;
+
+aiDrop.addEventListener('click', startAIAnalysis);
+aiDrop.addEventListener('dragover', e => { e.preventDefault(); aiDrop.classList.add('dragover'); });
+aiDrop.addEventListener('dragleave', () => aiDrop.classList.remove('dragover'));
+aiDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  aiDrop.classList.remove('dragover');
+  startAIAnalysis();
+});
+
+function startAIAnalysis() {
+  if (aiDrop.classList.contains('processing')) return;
+  aiResult.classList.remove('show');
+  aiDrop.classList.add('processing');
+  aiProgress.classList.add('show');
+  aiFill.style.width = '0%';
+  const stages = [
+    [10, 'ファイル読み込み...'],
+    [35, '周波数解析中...'],
+    [60, '音色特徴抽出...'],
+    [85, 'パラメーターマッチング...'],
+    [100, '完了'],
+  ];
+  let i = 0;
+  const tick = () => {
+    if (i >= stages.length) {
+      aiDrop.classList.remove('processing');
+      aiProgress.classList.remove('show');
+      showAIResult();
+      return;
+    }
+    const [pct, msg] = stages[i];
+    aiFill.style.width = pct + '%';
+    aiStatus.textContent = msg;
+    i++;
+    setTimeout(tick, 450);
+  };
+  tick();
+}
+
+function showAIResult() {
+  const pick = AI_PRESETS[aiPickIdx % AI_PRESETS.length];
+  aiPickIdx++;
+  document.getElementById('ai-summary').textContent = pick.summary;
+  const paramsEl = document.getElementById('ai-params');
+  paramsEl.innerHTML = '';
+  pick.detail.forEach(([k,v]) => {
+    const row = document.createElement('div');
+    row.className = 'ai-param';
+    row.innerHTML = `<span class="k">${k}</span><span class="v">${v}</span>`;
+    paramsEl.appendChild(row);
+  });
+  aiResult.classList.add('show');
+  aiResult.dataset.params = JSON.stringify(pick.params);
+  aiResult.dataset.preset = pick.presetName;
+  document.getElementById('ai-result-status').textContent = 'PREVIEW';
+  // Reset button text
+  const btn = document.getElementById('ai-apply-btn');
+  btn.classList.remove('applied');
+  btn.classList.add('primary');
+  btn.textContent = 'APPLY TO ALL MODES →';
+}
+
+function resetAIResult() {
+  aiResult.classList.remove('show');
+  aiFill.style.width = '0%';
+}
+
+function applyAI() {
+  const params = JSON.parse(aiResult.dataset.params);
+  // Snapshot before applying (only if not already applied)
+  if (!state.aiApplied) {
+    state.preAIState = snapshotKnobs();
+  }
+  Object.entries(params).forEach(([key, {val, display}]) => {
+    setKnobValue(key, val, display);
+  });
+  document.getElementById('preset-name').textContent = aiResult.dataset.preset;
+  state.aiApplied = true;
+  state.aiPresetName = aiResult.dataset.preset;
+  state.edited = false;
+  updatePresetUI();
+  showAIApplied(aiResult.dataset.preset);
+  // Update button to "applied" state
+  const btn = document.getElementById('ai-apply-btn');
+  btn.classList.remove('primary');
+  btn.classList.add('applied');
+  btn.textContent = '✓ APPLIED';
+  document.getElementById('ai-result-status').textContent = 'APPLIED';
+  // Deselect any preset card
+  document.querySelectorAll('.preset-card').forEach(x => x.classList.remove('active'));
+  showToast('✓ AI 解析を全モードに反映しました', 'ai');
+}
+
+function showAIApplied(name) {
+  document.getElementById('ai-current-name').textContent = name;
+  aiCurrent.classList.add('show');
+}
+function hideAIApplied() {
+  aiCurrent.classList.remove('show');
+  // also reset apply button text
+  const btn = document.getElementById('ai-apply-btn');
+  if (btn) {
+    btn.classList.remove('applied');
+    btn.classList.add('primary');
+    btn.textContent = 'APPLY TO ALL MODES →';
+  }
+}
+
+function resetAI() {
+  if (!state.aiApplied) return;
+  if (state.preAIState) {
+    restoreKnobs(state.preAIState);
+  }
+  document.getElementById('preset-name').textContent = '— No Preset —';
+  state.aiApplied = false;
+  state.aiPresetName = null;
+  state.preAIState = null;
+  state.edited = false;
+  updatePresetUI();
+  hideAIApplied();
+  document.getElementById('ai-result-status').textContent = 'PREVIEW';
+  showToast('↺ AI 適用前の状態に戻しました', 'warn');
+}
+
+// ===== XY pad =====
+const xyArea = document.getElementById('xy-area');
+const xyCursor = document.getElementById('xy-cursor');
+let xyDragging = false;
+xyArea.addEventListener('mousedown', e => { xyDragging = true; moveXY(e); });
+xyArea.addEventListener('mousemove', e => { if (xyDragging) moveXY(e); });
+document.addEventListener('mouseup', () => xyDragging = false);
+function moveXY(e) {
+  const rect = xyArea.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  xyCursor.style.left = Math.max(0, Math.min(100, x)) + '%';
+  xyCursor.style.top = Math.max(0, Math.min(100, y)) + '%';
+}
+
+// ===== Keyboard =====
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  const whiteNotes = ['C','D','E','F','G','A','B'];
+  const blackPositions = [0, 1, 3, 4, 5];
+  const blackNoteNames = ['C#','D#','F#','G#','A#'];
+  const octaves = [2, 3, 4];
+  octaves.forEach(oct => {
+    whiteNotes.forEach(n => {
+      const w = document.createElement('div');
+      w.className = 'key-white' + (n === 'C' ? ' c' : '');
+      w.dataset.note = n + oct;
+      w.innerHTML = '<div class="label">' + (n === 'C' ? n + oct : '') + '</div>';
+      w.addEventListener('mousedown', () => w.classList.add('pressed'));
+      w.addEventListener('mouseup',   () => w.classList.remove('pressed'));
+      w.addEventListener('mouseleave',() => w.classList.remove('pressed'));
+      kb.appendChild(w);
+    });
+  });
+  const lastC = document.createElement('div');
+  lastC.className = 'key-white c';
+  lastC.innerHTML = '<div class="label">C5</div>';
+  lastC.addEventListener('mousedown', () => lastC.classList.add('pressed'));
+  lastC.addEventListener('mouseup',   () => lastC.classList.remove('pressed'));
+  lastC.addEventListener('mouseleave',() => lastC.classList.remove('pressed'));
+  kb.appendChild(lastC);
+
+  const whiteCount = octaves.length * 7 + 1;
+  octaves.forEach(oct => {
+    blackPositions.forEach((bp, idx) => {
+      const blackNote = blackNoteNames[idx] + oct;
+      const idxInRow = (oct - octaves[0]) * 7 + bp;
+      const leftPct = ((idxInRow + 1) / whiteCount) * 100;
+      const blackWidthPct = (100 / whiteCount) * 0.6;
+      const b = document.createElement('div');
+      b.className = 'key-black';
+      b.dataset.note = blackNote;
+      b.style.left = `calc(${leftPct}% - ${blackWidthPct/2}%)`;
+      b.style.width = `${blackWidthPct}%`;
+      b.addEventListener('mousedown', () => b.classList.add('pressed'));
+      b.addEventListener('mouseup',   () => b.classList.remove('pressed'));
+      b.addEventListener('mouseleave',() => b.classList.remove('pressed'));
+      kb.appendChild(b);
+    });
+  });
+}
+buildKeyboard();
+
+// ===== CPU meter =====
+const cpuFill = document.getElementById('cpu-fill');
+const cpuPct = document.getElementById('cpu-pct');
+setInterval(() => {
+  const pct = 18 + Math.random() * 12;
+  cpuFill.style.width = pct + '%';
+  cpuPct.textContent = Math.round(pct) + '%';
+  if (pct > 80) cpuFill.style.background = 'var(--danger)';
+  else if (pct > 50) cpuFill.style.background = 'var(--accent)';
+  else cpuFill.style.background = 'var(--primary)';
+}, 1500);
+
+// ===== Toast =====
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+</script>
+
+</body>
+</html>

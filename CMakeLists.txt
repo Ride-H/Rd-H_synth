@@ -5,9 +5,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
-# JUCE (requires /Applications/JUCE)
+# JUCE — uses a local install if present, otherwise fetched automatically
+# (keeps local builds fast and CI runners self-contained)
 # ==============================================================================
-add_subdirectory(/Applications/JUCE juce)
+if(EXISTS "/Applications/JUCE/CMakeLists.txt")
+    add_subdirectory(/Applications/JUCE juce)
+else()
+    include(FetchContent)
+    FetchContent_Declare(JUCE
+        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+        GIT_TAG        8.0.12
+        GIT_SHALLOW    TRUE)
+    FetchContent_MakeAvailable(JUCE)
+endif()
 
 # ==============================================================================
 # Plugin definition
@@ -71,7 +81,7 @@ target_link_libraries(RdhSynth
 # ==============================================================================
 # Offline render console app
 # Headless preset(.rdhs) -> WAV renderer for objective DSP measurement
-# (e.g. wavetable THD, noise spectral slope). Recompiles the same
+# (e.g. wavetable THD, noise spectral slope, CI smoke). Recompiles the same
 # plugin sources so it exercises the real signal path. The JucePlugin_* macros
 # (normally emitted by juce_add_plugin) are defined explicitly here, matching
 # the juce_add_plugin(RdhSynth ...) settings above, since PluginProcessor.cpp
@@ -82,7 +92,7 @@ juce_generate_juce_header(RdhRender)
 
 target_sources(RdhRender
     PRIVATE
-        Tools/OfflineRenderer.cpp
+        render/OfflineRenderer.cpp
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
         Source/be/AudioAnalyzer.cpp
