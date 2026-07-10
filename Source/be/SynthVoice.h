@@ -53,6 +53,8 @@ public:
 
         oscEnv.setSampleRate        (newRate);
         pitchEnvelope.setSampleRate (newRate);
+        filterEnv.setSampleRate     (newRate);
+        cutoffSmoothed.reset        (newRate, 0.005);   // 5 ms ramp (click-safe)
         for (auto& f : iirFilter) f.reset();
         fmEngine.prepare  (newRate);
         noiseGen.prepare  (newRate);
@@ -70,6 +72,8 @@ public:
 
         oscEnv.noteOn();
         pitchEnvelope.noteOn();
+        filterEnv.noteOn();          // propagate noteOn to every EG (multi-EG lifecycle)
+        filterSubCount = 0;
         fmEngine.noteOn (velocity, static_cast<float> (baseFreqHz));
         noiseGen.noteOn (velocity);
     }
@@ -80,6 +84,7 @@ public:
         {
             oscEnv.noteOff();
             pitchEnvelope.noteOff();
+            filterEnv.noteOff();
             fmEngine.noteOff();
             noiseGen.noteOff();
         }
@@ -87,6 +92,7 @@ public:
         {
             oscEnv.reset();
             pitchEnvelope.reset();
+            filterEnv.reset();
             fmEngine.reset();
             noiseGen.reset();
             clearCurrentNote();
@@ -100,12 +106,16 @@ public:
     void renderNextBlock (juce::AudioBuffer<float>& buffer,
                           int startSample, int numSamples) override
     {
-        // S1-2: voice stays alive while ANY envelope (OSC / FM ops / Noise) is active,
+        // Voice stays alive while ANY envelope (OSC / FM ops / Noise) is active,
         // so long FM/Noise releases are not cut off (D-1 multi-EG lifecycle).
         if (! anyEnvelopeActive()) { clearCurrentNote(); return; }
 
         const double sr    = getSampleRate();
         const int    numCh = buffer.getNumChannels();
+
+        // Block-rate voice-wide pitch modulation. factor==1.0 (default /
+        // matrix off) leaves baseF bit-identical to baseFreqHz.
+        const double baseF = baseFreqHz * pitchModFactor;
 
         int activeOscs = 0;
         for (int o = 0; o < NUM_OSCS; ++o)
@@ -121,7 +131,7 @@ public:
         {
             // --- Pitch envelope (C-1: exp2f + early-exit when amount == 0) ---
             const float pitchEnvSamp = pitchEnvelope.getNextSample();
-            double modFreq = baseFreqHz;
+            double modFreq = baseF;
             if (pitchEnvAmountSemitones != 0.0f)
                 modFreq *= static_cast<double> (
                     std::exp2f (pitchEnvSamp * pitchEnvAmountSemitones / 12.0f));
@@ -159,6 +169,23 @@ public:
             const float toFilter = oscSum * gainScale * envVal * currentVelocity
                                    + fmSamp
                                    + noiseToFilter;
+
+            // Per-64-sample coefficient path (FilterEnv / matrix Cutoff-Reso).
+            // Default (voiceFilterPath == false) skips everything → legacy
+            // processor-side coefficients stay in charge, output bit-exact.
+            if (voiceFilterPath)
+            {
+                const float fenv = filterEnv.getNextSample(); // per-sample EG advance
+                if (filterSubCount == 0)
+                {
+                    const float base = cutoffSmoothed.skip (64);
+                    const float eff  = juce::jlimit (20.0f, (float) (sr * 0.49),
+                                                     base * std::exp2f (fenv * filterEnvAmount * 7.0f));
+                    iirFilter[0].setCoefficients (
+                        juce::IIRCoefficients::makeLowPass (sr, eff, resoTarget));
+                }
+                if (++filterSubCount >= 64) filterSubCount = 0;
+            }
 
             const float filtered = iirFilter[0].processSingleSampleRaw (toFilter);
 
@@ -211,6 +238,31 @@ public:
     }
 
     //==========================================================================
+    // Modulation setters (called from processBlock each block, RT-safe)
+    //==========================================================================
+    void setFilterEnvParams (const juce::ADSR::Parameters& p) { filterEnv.setParameters (p); }
+    void setFilterEnvAmount (float a)                          { filterEnvAmount = a; }
+    void setPitchModFactor  (double f)                         { pitchModFactor = f; }
+
+    void setFMPitchRatioFactors (float pitchFactor, const float* ratioFactorPerOp)
+    {
+        fmEngine.setPitchRatioFactors (pitchFactor, ratioFactorPerOp);
+    }
+
+    // Enables the per-64-sample coefficient path. While active the
+    // legacy processor-side setFilterCoefficients path must stay quiet; the
+    // processor forces a coefficient resync when the path deactivates.
+    void setFilterTarget (float cutoffHz, float reso, bool active)
+    {
+        voiceFilterPath = active;
+        if (active)
+        {
+            cutoffSmoothed.setTargetValue (cutoffHz);
+            resoTarget = reso;
+        }
+    }
+
+    //==========================================================================
     // FM setters
     //==========================================================================
     void setFMEnabled        (bool e)  { fmEngine.setEnabled (e); }
@@ -237,7 +289,7 @@ public:
 
 private:
     //==========================================================================
-    // S1-2: voice is active while any sub-envelope (OSC / FM / Noise) still rings.
+    // Voice is active while any sub-envelope (OSC / FM / Noise) still rings.
     // NB: deliberately NOT named isVoiceActive() — that is a juce::SynthesiserVoice
     // virtual and overriding it would change the Synthesiser's voice-allocation logic.
     bool anyEnvelopeActive() const noexcept
@@ -287,6 +339,17 @@ private:
     juce::ADSR      oscEnv;
     juce::ADSR      pitchEnvelope;
     juce::IIRFilter iirFilter[1];
+
+    // Modulation state. filterEnv is a modulation EG —
+    // deliberately NOT part of anyEnvelopeActive(): it produces no gain, so a
+    // voice whose amp EGs are idle is silent and must be returned regardless.
+    juce::ADSR filterEnv;
+    juce::LinearSmoothedValue<float> cutoffSmoothed { 8000.0f };
+    float  filterEnvAmount = 0.0f;
+    float  resoTarget      = 1.0f;
+    bool   voiceFilterPath = false;
+    int    filterSubCount  = 0;
+    double pitchModFactor  = 1.0;
 
     rdh::synth::FMEngine       fmEngine;
     rdh::synth::NoiseGenerator noiseGen;

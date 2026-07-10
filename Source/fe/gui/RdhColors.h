@@ -2,7 +2,7 @@
   ==============================================================================
     RdhColors.h
     Color token definitions — Rd-H Synth WHITE theme palette.
-    Source: UI design spec.
+    Source: Docs/MySimpleSynth3_spec/docs/04_ui_design.md §2 (2026-05-12 rev)
     HC-5: neon green #7CFC8A retained as primary ACCENT (glow / indicators).
   ==============================================================================
 */

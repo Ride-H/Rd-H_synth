@@ -29,7 +29,7 @@ public:
     {
         // --- Build initial banks ---
         // FACTORY bank: built-in presets — single source of truth is
-        // PresetManager::getBuiltinPresetNames() (no duplication).
+        // PresetManager::getBuiltinPresetNames() (single source, no duplication).
         PresetBank factory;
         factory.name = "FACTORY";
         factory.presetNames = PresetManager::getBuiltinPresetNames();
