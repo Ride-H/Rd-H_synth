@@ -291,6 +291,20 @@ private:
         using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
         fltCutoffAttach = std::make_unique<SA> (apvtsRef, "filterCutoff",    filterCutoff);
         fltResAttach    = std::make_unique<SA> (apvtsRef, "filterResonance", filterResonance);
+
+        // FilterEnv → Cutoff controls
+        const struct { juce::Slider* s; juce::Label* l; const char* lbl; const char* id; } envKnobs[] = {
+            { &filterEnvAmount,  &filterEnvAmountLbl, "ENV AMOUNT", "filter_env_amount"  },
+            { &filterEnvAttack,  &filterEnvAtkLbl,    "ENV ATK",    "filter_env_attack"  },
+            { &filterEnvDecay,   &filterEnvDecLbl,    "ENV DEC",    "filter_env_decay"   },
+            { &filterEnvSustain, &filterEnvSusLbl,    "ENV SUS",    "filter_env_sustain" },
+            { &filterEnvRelease, &filterEnvRelLbl,    "ENV REL",    "filter_env_release" },
+        };
+        for (auto& k : envKnobs)
+        {
+            setupKnob (*filterPanel, *k.s, *k.l, k.lbl);
+            fltEnvAttachments.push_back (std::make_unique<SA> (apvtsRef, k.id, *k.s));
+        }
     }
 
     //==========================================================================
@@ -302,16 +316,17 @@ private:
         addChildComponent (*oscEnvPanel);
         allPanels.add (oscEnvPanel.get());
 
-        setupKnob (*oscEnvPanel, ampAttack,  ampAttackLbl,  "ATTACK");
-        setupKnob (*oscEnvPanel, ampDecay,   ampDecayLbl,   "DECAY");
-        setupKnob (*oscEnvPanel, ampSustain, ampSustainLbl, "SUSTAIN");
-        setupKnob (*oscEnvPanel, ampRelease, ampReleaseLbl, "RELEASE");
+        setupKnob (*oscEnvPanel, oscEnvAttack,  oscEnvAttackLbl,  "ATTACK");
+        setupKnob (*oscEnvPanel, oscEnvDecay,   oscEnvDecayLbl,   "DECAY");
+        setupKnob (*oscEnvPanel, oscEnvSustain, oscEnvSustainLbl, "SUSTAIN");
+        setupKnob (*oscEnvPanel, oscEnvRelease, oscEnvReleaseLbl, "RELEASE");
 
+        // Variables renamed amp* → oscEnv*; APVTS IDs unchanged.
         using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-        ampAtkAttach = std::make_unique<SA> (apvtsRef, "attack",  ampAttack);
-        ampDecAttach = std::make_unique<SA> (apvtsRef, "decay",   ampDecay);
-        ampSusAttach = std::make_unique<SA> (apvtsRef, "sustain", ampSustain);
-        ampRelAttach = std::make_unique<SA> (apvtsRef, "release", ampRelease);
+        oscEnvAtkAttach = std::make_unique<SA> (apvtsRef, "attack",  oscEnvAttack);
+        oscEnvDecAttach = std::make_unique<SA> (apvtsRef, "decay",   oscEnvDecay);
+        oscEnvSusAttach = std::make_unique<SA> (apvtsRef, "sustain", oscEnvSustain);
+        oscEnvRelAttach = std::make_unique<SA> (apvtsRef, "release", oscEnvRelease);
     }
 
     //==========================================================================
@@ -439,6 +454,22 @@ private:
         filterCutoff.setBounds       (8,        18, kW, kH);
         filterResonanceLbl.setBounds (8 + kW + 8, 4, kW, 14);
         filterResonance.setBounds    (8 + kW + 8, 18, kW, kH);
+
+        // FilterEnv row (smaller knobs, same grid as noise EG row)
+        const int eW = 64, eH = 50, gap = 4;
+        int x = 8;
+        const int y = 18 + kH + 8; // below the cutoff/reso row
+        auto plE = [&] (juce::Slider& s, juce::Label& lbl)
+        {
+            lbl.setBounds (x, y, eW, 12);
+            s.setBounds   (x, y + 12, eW, eH);
+            x += eW + gap;
+        };
+        plE (filterEnvAmount,  filterEnvAmountLbl);
+        plE (filterEnvAttack,  filterEnvAtkLbl);
+        plE (filterEnvDecay,   filterEnvDecLbl);
+        plE (filterEnvSustain, filterEnvSusLbl);
+        plE (filterEnvRelease, filterEnvRelLbl);
         juce::ignoreUnused (area);
     }
 
@@ -453,8 +484,8 @@ private:
             s.setBounds (x, 18, kW, kH);
             x += kW + 8;
         };
-        plK (ampAttack, ampAttackLbl); plK (ampDecay, ampDecayLbl);
-        plK (ampSustain,ampSustainLbl); plK (ampRelease,ampReleaseLbl);
+        plK (oscEnvAttack, oscEnvAttackLbl);  plK (oscEnvDecay, oscEnvDecayLbl);
+        plK (oscEnvSustain,oscEnvSustainLbl); plK (oscEnvRelease,oscEnvReleaseLbl);
         juce::ignoreUnused (area);
     }
 
@@ -531,11 +562,15 @@ private:
     juce::Slider filterCutoff, filterResonance;
     juce::Label  filterCutoffLbl, filterResonanceLbl;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fltCutoffAttach, fltResAttach;
+    // FilterEnv → Cutoff
+    juce::Slider filterEnvAmount, filterEnvAttack, filterEnvDecay, filterEnvSustain, filterEnvRelease;
+    juce::Label  filterEnvAmountLbl, filterEnvAtkLbl, filterEnvDecLbl, filterEnvSusLbl, filterEnvRelLbl;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> fltEnvAttachments;
 
-    //--- OSC ENV controls (Phase 2: rename amp* → oscEnv* when FilterEnv is added) ---
-    juce::Slider ampAttack, ampDecay, ampSustain, ampRelease;
-    juce::Label  ampAttackLbl, ampDecayLbl, ampSustainLbl, ampReleaseLbl;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ampAtkAttach, ampDecAttach, ampSusAttach, ampRelAttach;
+    //--- OSC ENV controls (renamed amp* → oscEnv*; APVTS IDs unchanged) ---
+    juce::Slider oscEnvAttack, oscEnvDecay, oscEnvSustain, oscEnvRelease;
+    juce::Label  oscEnvAttackLbl, oscEnvDecayLbl, oscEnvSustainLbl, oscEnvReleaseLbl;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> oscEnvAtkAttach, oscEnvDecAttach, oscEnvSusAttach, oscEnvRelAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AdvancedModePanel)
 };

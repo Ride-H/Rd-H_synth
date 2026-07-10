@@ -15,6 +15,8 @@
 #include <JuceHeader.h>
 #include "be/SynthVoice.h"
 #include "be/AudioAnalyzer.h"
+#include "be/dsp/LFO.h"
+#include "be/dsp/ModMatrix.h"
 
 //==============================================================================
 class RdhSynthAudioProcessor : public juce::AudioProcessor
@@ -85,6 +87,54 @@ public:
 private:
     //==========================================================================
     static constexpr int NUM_VOICES = 16;
+
+    //==========================================================================
+    // Every APVTS raw-value pointer is resolved once in the
+    // constructor — processBlock then does plain atomic loads, eliminating the
+    // per-block string-ID lookups (a measured in-host overhead). Pointers stay
+    // valid for the processor's lifetime (APVTS parameters are never removed).
+    struct ParamPtrs
+    {
+        std::atomic<float> *waveType = nullptr, *waveType2 = nullptr, *osc2Enable = nullptr,
+                           *waveType3 = nullptr, *osc3Enable = nullptr,
+                           *attack = nullptr, *decay = nullptr, *sustain = nullptr, *release = nullptr,
+                           *filterCutoff = nullptr, *filterResonance = nullptr,
+                           *unisonVoices = nullptr, *unisonDetune = nullptr,
+                           *pitchEnvAmount = nullptr, *pitchEnvAttack = nullptr, *volume = nullptr,
+                           *fmEnable = nullptr, *fmOutputLevel = nullptr, *fmAlgorithm = nullptr,
+                           *fmFeedback = nullptr,
+                           *noiseEnable = nullptr, *noiseType = nullptr, *noiseLevel = nullptr,
+                           *noiseFilterSend = nullptr, *noiseDirectOut = nullptr,
+                           *noiseEgAttack = nullptr, *noiseEgDecay = nullptr,
+                           *noiseEgSustain = nullptr, *noiseEgRelease = nullptr;
+
+        // [op][field]: ratio, detune, level, attack, decay, sustain, release,
+        //              vel_sens, key_scale — same order as OperatorParams fields.
+        std::atomic<float>* fmOp[4][9] = {};
+
+        // Modulation system: [lfo][rate,depth,wave,phase,sync,retrig],
+        // [slot][source,dest,amount,curve,enable].
+        std::atomic<float>* lfoP[2][6]     = {};
+        std::atomic<float>* modSlot[16][5] = {};
+        std::atomic<float> *filterEnvAttack = nullptr, *filterEnvDecay = nullptr,
+                           *filterEnvSustain = nullptr, *filterEnvRelease = nullptr,
+                           *filterEnvAmount = nullptr;
+    };
+    ParamPtrs pp;
+    void resolveParamPtrs();
+
+    //==========================================================================
+    // Instance-level modulation, evaluated once per
+    // block in processBlock. Fully bypassed (zero cost, bit-exact) while no
+    // slot is enabled and filter_env_amount == 0 (zero cost when unused).
+    rdh::synth::LFO       lfo[2];
+    rdh::synth::ModMatrix modMatrix;
+    juce::RangedAudioParameter* lfoRateParam[2] = {}; // normalized rate → sync division
+    float lastNoteVelocity = 0.0f;   // matrix source: last-note velocity (documented limitation)
+    float aftertouchVal    = 0.0f;   // channel pressure
+    float modWheelVal      = 0.0f;   // CC1
+    bool  modWasActive     = false;  // transition guard: restore FM factors once
+    bool  filterPathWasActive = false; // transition guard: legacy coefficient resync
 
     juce::Synthesiser synth;
 

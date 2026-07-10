@@ -1,13 +1,13 @@
 /*
   ==============================================================================
     WaveTable.h
-    Shared read-only sine wavetable for the FM engine (Phase 2 / Sprint 1, S1-1).
+    Shared read-only sine wavetable for the FM engine.
     2048-point table + 2^N mask indexing + linear interpolation.
 
     HC-2: the table is a read-only global (immutable after first init via a
     function-local static), so it introduces NO mutable shared state across
     plugin instances. HC-3: lookup is allocation-free and lock-free.
-    Power-of-two mask indexing.
+    Power-of-two mask indexing avoids out-of-bounds reads at the wrap point.
   ==============================================================================
 */
 

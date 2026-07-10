@@ -7,7 +7,7 @@
                           wavetable oscillator, Key Scaling, C-4 ADSR guard.
     Anti-aliasing: 4× oversampling at ≤48 kHz, 2× at ≤96 kHz, 1× above.
     Namespace: rdh::synth (REQ-COMPAT-019).
-    Per-operator FM voice engine (S1-1 / S1-3).
+    
   ==============================================================================
 */
 
@@ -30,7 +30,7 @@ struct OperatorParams
     float sustain  = 0.5f;
     float release  = 0.3f;
     float velSens  = 0.5f;   // velocity sensitivity 0.0 – 1.0
-    float keyScale = 0.0f;   // S1-3: level key scaling 0.0 (off) – 1.0
+    float keyScale = 0.0f;   // level key scaling 0.0 (off) – 1.0
 };
 
 //==============================================================================
@@ -39,7 +39,7 @@ struct OperatorParams
 // signal fed into other operators' phase (in cycles). ADSR runs at the
 // oversampled rate so time constants are preserved.
 //==============================================================================
-// Hot-only per-op state. The cold config (OperatorParams + C-4
+// Hot-only state. The cold config (OperatorParams + the ADSR change-detection
 // guard) lives in FMEngine::opCold so the per-sample hot footprint is smaller and
 // the active operators pack into fewer cache lines (in-host cold-cache mitigation).
 // Arithmetic in process() is unchanged → bit-exact (verified by RdhRender PCM MD5).
@@ -75,6 +75,10 @@ public:
     void noteOff() { adsr.noteOff(); }
     void reset()   { adsr.reset(); phase = 0.0; prevOut1 = prevOut2 = 0.0f; }
     bool isActive() const { return adsr.isActive(); }
+
+    // Block-rate pitch/ratio modulation writes the scaled
+    // increment; hot layout unchanged. Same audio thread as process() — no race.
+    void setPhaseInc (double inc) noexcept { phaseInc = inc; }
 
     float prevAvg() const noexcept { return (prevOut1 + prevOut2) * 0.5f; }
 
@@ -138,11 +142,13 @@ public:
         const float ks       = juce::jlimit (-1.0f, 1.0f, (note - 60.0f) / 48.0f);
         for (int i = 0; i < activeOpCount; ++i)
         {
-            const OperatorParams& p = opCold[(size_t) i].params;
+            OperatorCold&         c = opCold[(size_t) i];
+            const OperatorParams& p = c.params;
             const float  velScaled  = 1.0f - p.velSens * (1.0f - vel);
             const double det        = std::pow (2.0, p.detune / 1200.0);
             const double inc        = baseHz * (double) p.ratio * det / osRate;
             const float  keyScale   = juce::jmax (0.0f, 1.0f - p.keyScale * ks);
+            c.baseInc = inc;   // modulation base for setPitchRatioFactors
             ops[(size_t) i].noteOnHot (velScaled, inc, keyScale, p.level);
         }
     }
@@ -178,7 +184,7 @@ public:
         c.params = p;
         ops[(size_t) idx].setLevel (p.level);   // per-block level automation → hot levelKey
 
-        // C-4 guard (D-03): only re-push ADSR when its fields change.
+        // Change-detection guard: only re-push ADSR when its fields change.
         if (! juce::exactlyEqual (p.attack,  c.lastA) || ! juce::exactlyEqual (p.decay,   c.lastD)
          || ! juce::exactlyEqual (p.sustain, c.lastS) || ! juce::exactlyEqual (p.release, c.lastR))
         {
@@ -192,7 +198,21 @@ public:
         }
     }
 
-    // S1-3: select one of the 4 Phase-2 algorithms (REQ-FM-007). Builds the
+    // Block-rate pitch & per-OP ratio modulation.
+    // Scales each active operator's phase increment around the noteOn-captured
+    // baseInc (kept in OperatorCold — hot layout unchanged, zero
+    // footprint growth). factors == 1 writes baseInc back bit-exactly. The
+    // fm_opN_ratio parameter itself still latches at noteOn; the matrix
+    // modulates around it.
+    void setPitchRatioFactors (float pitchFactor, const float* ratioFactorPerOp) noexcept
+    {
+        for (int i = 0; i < activeOpCount; ++i)
+            ops[(size_t) i].setPhaseInc (opCold[(size_t) i].baseInc
+                                         * (double) pitchFactor
+                                         * (double) ratioFactorPerOp[i]);
+    }
+
+    // Select one of the 4 algorithms. Builds the
     // connection matrix / carrier flags / process order. Called on the message
     // thread; no per-sample topological work (REQ-FM-011).
     void setAlgorithm (int id) noexcept
@@ -275,6 +295,7 @@ private:
     {
         OperatorParams params;
         float lastA = -1.0f, lastD = -1.0f, lastS = -1.0f, lastR = -1.0f; // C-4 guard cache
+        double baseInc = 0.0; // noteOn increment, modulation base (cold — hot layout unchanged)
     };
     std::array<OperatorCold, MAX_OPERATORS> opCold;
     std::array<std::array<bool, MAX_OPERATORS>, MAX_OPERATORS> algorithm {}; // [mod][carrier]

@@ -51,7 +51,7 @@ public:
         sampleRate = sr;
         adsr.setSampleRate (sr);
         applyADSRParams();
-        computeColorCoeffs (sr);   // S1-4: SR-compensate Pink/Brown coefficients
+        computeColorCoeffs (sr);   // SR-compensate Pink/Brown coefficients
     }
 
     void noteOn (float vel)
@@ -64,7 +64,7 @@ public:
     void reset()
     {
         adsr.reset();
-        for (auto& b : pink_b) b = 0.0f;   // S1-4: clear colored-noise state
+        for (auto& b : pink_b) b = 0.0f;   // clear colored-noise state
         brownState = 0.0f;
     }
 
@@ -117,7 +117,7 @@ private:
                / static_cast<float> (std::numeric_limits<int64_t>::max());
     }
 
-    // S1-4: White → selected colour. Pink = Paul Kellet 7-section IIR
+    // White → selected colour. Pink = Paul Kellet 7-section IIR
     // (INV-1: Kellet chosen, within REQ-NOISE-010 8 FLOPS). Brown = leaky integrator.
     float generateColored() noexcept
     {
@@ -190,7 +190,7 @@ private:
     float      egSustain   = 0.0f;
     float      egRelease   = 0.2f;
 
-    // S1-4 colored-noise state / SR-compensated coefficients (computed in prepare)
+    // Colored-noise state / SR-compensated coefficients (computed in prepare)
     float pink_b[7]  = {};
     float pinkPole[6] = { 0.99886f, 0.99332f, 0.96900f, 0.86650f, 0.55000f, -0.7616f };
     float pinkCoef[6] = { 0.0555179f, 0.0750759f, 0.1538520f, 0.3104856f, 0.5329522f, -0.0168980f };

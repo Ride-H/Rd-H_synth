@@ -31,14 +31,14 @@ RdhSynthAudioProcessorEditor::RdhSynthAudioProcessorEditor (RdhSynthAudioProcess
 
     topBar.onModeChanged = [this] (ViewMode m) { onModeChanged (m); };
 
-    // D-1: clicking the preset name opens the .rdhs load dialog,
+    // Clicking the preset name opens the .rdhs load dialog,
     // and the TopBar name refreshes once a file is loaded. This is the minimal
     // bring-forward of the Sprint 3 preset browser, used for Sprint 1 audition.
     topBar.onPresetNameClicked = [this] { presetManager.loadPresetDialog(); };
     presetManager.onPresetLoaded = [this] (const juce::String& name)
     {
         topBar.setPresetName (name, false, false);
-        audioProcessor.setCurrentPresetName (name);   // persist name across editor reopen
+        audioProcessor.setCurrentPresetName (name);   // persist for editor reopen
     };
 
     //--- Mode panels ---
@@ -113,7 +113,7 @@ void RdhSynthAudioProcessorEditor::onPresetSelected (int idx)
     // Update top-bar preset name
     const auto nm = PresetManager::getBuiltinPresetName (idx);
     topBar.setPresetName (nm, false, false);
-    audioProcessor.setCurrentPresetName (nm);   // persist name across editor reopen
+    audioProcessor.setCurrentPresetName (nm);   // persist for editor reopen
 }
 
 //==============================================================================
